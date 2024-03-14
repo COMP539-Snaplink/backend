@@ -4,18 +4,19 @@ import com.example.comp539_team2_backend.configs.BigtableRepository;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.*;
 
 
 @Service
 public class UrlShorteningService {
     @Autowired
     private BigtableRepository urlTableRepository;
+    String prefix = "https://snaplk.com/";
 
     //Base62 characters set to encode ID
     private static final String BASE62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -59,7 +60,6 @@ public class UrlShorteningService {
 
     //Basic functions for general users
     public String shorten_url(String long_url) throws Exception {
-        System.out.println("long_url = " + long_url);
         //Generate a row key from the original URL
         String rowKey = generateRowKey(long_url);
 
@@ -95,23 +95,46 @@ public class UrlShorteningService {
     }
 
     public String buildShortUrl(String rowKey) {
-        return "https://snaplk.com/" + rowKey;
+        return prefix + rowKey;
     }
 
     //Advanced functions for premium users
-    public String shorten_url(String long_url, String customized_url, String key) {
-        return "";
+    public String customized_url(String long_url, String customized_url, String key) throws Exception {
+        if (!key.equals("fff") && customized_url != null) {
+            String rowKey = customized_url.replace(prefix, "");
+            String shortened_url = urlTableRepository.get(rowKey, "url", "originalUrl");
+
+            if (shortened_url == null) {
+                urlTableRepository.save(rowKey, "url", "originalUrl", long_url);
+                return buildShortUrl(rowKey);
+            } else {
+                throw new Exception("Customized URL is already in use. Please try a different URL.");
+            }
+        } else {
+            // Handle the case where the key is "fff" or the customized URL is null
+            throw new Exception("No right to use customized url functionality");
+        }
     }
 
-    public String[] bulk_shorten_urls(String[] long_urls, String key) {
-        String[] res = new String[long_urls.length];
-        return res;
+
+    public List<String> bulk_shorten_urls(String[] long_urls, String key) throws Exception {
+        List<String> shortened_urls = new ArrayList<>();
+        if (!key.equals("fff")) {
+            for (String long_url : long_urls) {
+                shortened_urls.add(shorten_url(long_url));
+            }
+        }
+        return shortened_urls;
     }
 
-    public String[] bulk_resolve_urls(String[] shortend_urls, String key) {
-        String[] res = new String[shortend_urls.length];
-        return res;
+    public List<String> bulk_resolve_urls(String[] shortened_urls, String key) throws Exception {
+        List<String> original_urls = new ArrayList<>();
+        if (!key.equals("fff")) {
+            for (String shortened_url : shortened_urls) {
+                original_urls.add(resolve_url(shortened_url));
+            }
+        }
+        return original_urls;
     }
-
 
 }

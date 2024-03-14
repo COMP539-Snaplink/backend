@@ -6,6 +6,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.comp539_team2_backend.*;
 
+import java.util.Collections;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api")
 public class UrlShorteningController {
@@ -14,7 +17,6 @@ public class UrlShorteningController {
 
     @PostMapping("/shorten")
     public ResponseEntity<String> shortenUrl(@RequestBody UrlRequestDTO request) {
-        System.out.println("request = " + request.getLongUrl());
         try {
             String shortened_url = urlShorteningService.shorten_url(request.getLongUrl());
             return ResponseEntity.ok(shortened_url);
@@ -36,4 +38,25 @@ public class UrlShorteningController {
             return ResponseEntity.internalServerError().body("Failed to shorten url: " + e.getMessage());
         }
     }
+
+    @PostMapping("/bulk_shorten")
+    public ResponseEntity<List<String>> bulk_shorten_url(@RequestBody UrlRequestDTO request) {
+        try {
+            List<String> shortened_Urls = urlShorteningService.bulk_shorten_urls(request.getLongUrls(), "");
+            return ResponseEntity.ok(shortened_Urls);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Collections.singletonList("Failed to shorten urls: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/bulk_resolve")
+    public ResponseEntity<List<String>> bulkResolveUrls(@RequestBody List<String> shortUrls) {
+        try {
+            List<String> originalUrls = urlShorteningService.bulk_resolve_urls(shortUrls.toArray(new String[0]), "");
+            return ResponseEntity.ok(originalUrls);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Collections.singletonList("Failed to resolve urls: " + e.getMessage()));
+        }
+    }
+
 }
