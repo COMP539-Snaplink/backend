@@ -18,7 +18,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 //https://docs.spring.io/spring-security/site/docs/current/api/org/springframework/security/config/annotation/web/builders/HttpSecurity.html#oauth2Login()
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig {
+public class OAuthConfig {
 
 
     @Value("${google.auth.url}")

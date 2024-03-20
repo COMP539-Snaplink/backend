@@ -1,7 +1,10 @@
 package com.example.comp539_team2_backend.controllers;
 
-import com.example.comp539_team2_backend.GoogleLoginResponse;
-import com.example.comp539_team2_backend.GoogleOAuthRequest;
+import com.example.comp539_team2_backend.entities.GoogleLoginResponse;
+import com.example.comp539_team2_backend.entities.GoogleOAuthRequest;
+import com.example.comp539_team2_backend.entities.UserInfo;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.net.URI;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -34,62 +38,59 @@ public class SocialLoginController {
     @Value("${google.secret}")
     private String googleClientSecret;
 
-
-    // 구글 로그인창 호출
-    // http://localhost:8080/login/getGoogleAuthUrl
     @GetMapping(value = "/login/getGoogleAuthUrl")
     public ResponseEntity<?> getGoogleAuthUrl(HttpServletRequest request) throws Exception {
 
-        String reqUrl = googleLoginUrl + "/o/oauth2/v2/auth?client_id=" + googleClientId + "&redirect_uri=" + googleRedirectUrl
-                + "&response_type=code&scope=email%20profile%20openid&access_type=offline";
-
-        log.info("myLog-LoginUrl : {}",googleLoginUrl);
-        log.info("myLog-ClientId : {}",googleClientId);
-        log.info("myLog-RedirectUrl : {}",googleRedirectUrl);
+        String reqUrl = googleAuthUrl + "?" +
+                "client_id=" + googleClientId +
+                "&scope=email%20profile%20openid&" +
+                "access_type=offline&include_granted_scopes=true&" +
+                "response_type=code&" +
+                "redirect_uri="+googleRedirectUrl;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create(reqUrl));
 
-        //1.reqUrl 구글로그인 창을 띄우고, 로그인 후 /login/oauth_google_check 으로 리다이렉션하게 한다.
+        //1.login page appears and redirects to / after login success
         return new ResponseEntity<>(headers, HttpStatus.MOVED_PERMANENTLY);
     }
 
     // 구글에서 리다이렉션
-    @GetMapping(value = "/login/oauth2/code/google")
-    public String oauth_google_check(HttpServletRequest request,
+    @GetMapping(value = "/")
+    public UserInfo oauth_google_check(HttpServletRequest request,
                                      @RequestParam(value = "code") String authCode,
                                      HttpServletResponse response) throws Exception{
-        log.info("redirected");
 
-        //2.구글에 등록된 레드망고 설정정보를 보내어 약속된 토큰을 받위한 객체 생성
-        GoogleOAuthRequest googleOAuthRequest = GoogleOAuthRequest
-                .builder()
-                .clientId(googleClientId)
-                .clientSecret(googleClientSecret)
-                .code(authCode)
-                .redirectUri(googleRedirectUrl)
-                .grantType("authorization_code")
-                .build();
+        GoogleOAuthRequest googleOAuthRequest = GoogleOAuthRequest.builder()
+                                                                .clientId(googleClientId)
+                                                                .clientSecret(googleClientSecret)
+                                                                .code(authCode)
+                                                                .redirectUri(googleRedirectUrl)
+                                                                .grantType("authorization_code")
+                                                                .build();
 
         RestTemplate restTemplate = new RestTemplate();
 
-        //3.토큰요청을 한다.
+        //3.
         ResponseEntity<GoogleLoginResponse> apiResponse = restTemplate.postForEntity("https://oauth2.googleapis.com/token", googleOAuthRequest, GoogleLoginResponse.class);
-//        ResponseEntity<GoogleLoginResponse> apiResponse = restTemplate.postForEntity(googleAuthUrl + "/token", googleOAuthRequest, GoogleLoginResponse.class);
-        //4.받은 토큰을 토큰객체에 저장
+
+        // 4. save token as a class
         GoogleLoginResponse googleLoginResponse = apiResponse.getBody();
-
-        log.info("responseBody {}",googleLoginResponse.toString());
-
 
         String googleToken = googleLoginResponse.getId_token();
 
-        //5.받은 토큰을 구글에 보내 유저정보를 얻는다.
-        String requestUrl = UriComponentsBuilder.fromHttpUrl(googleAuthUrl + "/tokeninfo").queryParam("id_token",googleToken).toUriString();
+        // 5. use google token to retrieve user info
+        String requestUrl = "https://oauth2.googleapis.com/tokeninfo?id_token="+googleToken;
 
-        //6.허가된 토큰의 유저정보를 결과로 받는다.
-        String resultJson = restTemplate.getForObject(requestUrl, String.class);
+        ResponseEntity<String> rest_response = restTemplate.getForEntity(requestUrl, String.class);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(rest_response.getBody());
 
-        return resultJson;
+        return UserInfo
+                .builder()
+                .name(root.path("name").asText())
+                .email(root.path("email").asText())
+                .googleToken(googleToken)
+                .build();
     }
 }
