@@ -91,6 +91,8 @@ public class SocialLoginController {
                 .name(root.path("name").asText())
                 .email(root.path("email").asText())
                 .googleToken(googleToken)
+                .code(authCode)
+                .subscription(0)
                 .build();
     }
 }
