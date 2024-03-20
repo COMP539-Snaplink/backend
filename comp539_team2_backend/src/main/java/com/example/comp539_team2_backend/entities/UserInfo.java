@@ -8,8 +8,9 @@ import org.apache.hbase.thirdparty.io.netty.handler.codec.mqtt.MqttMessageBuilde
 @Data
 @Builder
 public class UserInfo {
-    private String name;   // 반환된 토큰 유형(Bearer 고정)
+    private String name;
     private String email;
     private String googleToken;
-
+    private String code;
+    private Integer subscription;
 }
