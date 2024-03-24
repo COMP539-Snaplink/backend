@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import java.io.IOException;
 import java.util.Map;
 import java.util.function.Function;
+
 import com.google.cloud.bigtable.hbase.BigtableConfiguration;
 import com.google.cloud.bigtable.hbase.BigtableOptionsFactory;
 import org.apache.hadoop.hbase.TableName;
@@ -40,6 +41,5 @@ public class BigtableRepository {
             return Bytes.toString(result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes(columnQualifier)));
         }
     }
-
 }
 
