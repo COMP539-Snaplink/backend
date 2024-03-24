@@ -39,6 +39,9 @@ public class SocialLoginController {
     @Value("${google.secret}")
     private String googleClientSecret;
 
+    @Value("${google.token.uri}")
+    private String googleTokenUrl;
+
     private static final String projectId = "rice-comp-539-spring-2022"; // my-gcp-project-id
     private static final String instanceId = "shared-539" ; // my-bigtable-instance-id
     private static final String tableId =  "spring24-team2-snaplink"; // my-bigtable-table-id
@@ -64,6 +67,7 @@ public class SocialLoginController {
 
     // 구글에서 리다이렉션
     @GetMapping(value = "/")
+//    @GetMapping(value = "login/oauth2/code/google")
     public String oauth_google_check(HttpServletRequest request,
                                      @RequestParam(value = "code") String authCode,
                                      HttpServletResponse response) throws Exception {
@@ -79,7 +83,7 @@ public class SocialLoginController {
         RestTemplate restTemplate = new RestTemplate();
 
         //3.
-        ResponseEntity<GoogleLoginResponse> apiResponse = restTemplate.postForEntity("https://oauth2.googleapis.com/token", googleOAuthRequest, GoogleLoginResponse.class);
+        ResponseEntity<GoogleLoginResponse> apiResponse = restTemplate.postForEntity(googleTokenUrl, googleOAuthRequest, GoogleLoginResponse.class);
 
         // 4. save token as a class
         GoogleLoginResponse googleLoginResponse = apiResponse.getBody();
