@@ -3,6 +3,7 @@ package com.example.comp539_team2_backend.controllers;
 import com.example.comp539_team2_backend.entities.GoogleLoginResponse;
 import com.example.comp539_team2_backend.entities.GoogleOAuthRequest;
 import com.example.comp539_team2_backend.entities.UserInfo;
+import com.example.comp539_team2_backend.configs.BigtableRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,12 @@ public class SocialLoginController {
     @Value("${google.secret}")
     private String googleClientSecret;
 
+    private static final String projectId = "rice-comp-539-spring-2022"; // my-gcp-project-id
+    private static final String instanceId = "shared-539" ; // my-bigtable-instance-id
+    private static final String tableId =  "spring24-team2-snaplink"; // my-bigtable-table-id
+    private static final String defaultSubscription = "0";
+    private static final BigtableRepository userTableRepository = new BigtableRepository(projectId, instanceId, tableId);
+
     @GetMapping(value = "/login/getGoogleAuthUrl")
     public ResponseEntity<?> getGoogleAuthUrl(HttpServletRequest request) throws Exception {
 
@@ -57,17 +64,17 @@ public class SocialLoginController {
 
     // 구글에서 리다이렉션
     @GetMapping(value = "/")
-    public UserInfo oauth_google_check(HttpServletRequest request,
+    public String oauth_google_check(HttpServletRequest request,
                                      @RequestParam(value = "code") String authCode,
-                                     HttpServletResponse response) throws Exception{
+                                     HttpServletResponse response) throws Exception {
 
         GoogleOAuthRequest googleOAuthRequest = GoogleOAuthRequest.builder()
-                                                                .clientId(googleClientId)
-                                                                .clientSecret(googleClientSecret)
-                                                                .code(authCode)
-                                                                .redirectUri(googleRedirectUrl)
-                                                                .grantType("authorization_code")
-                                                                .build();
+                .clientId(googleClientId)
+                .clientSecret(googleClientSecret)
+                .code(authCode)
+                .redirectUri(googleRedirectUrl)
+                .grantType("authorization_code")
+                .build();
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -80,13 +87,13 @@ public class SocialLoginController {
         String googleToken = googleLoginResponse.getId_token();
 
         // 5. use google token to retrieve user info
-        String requestUrl = "https://oauth2.googleapis.com/tokeninfo?id_token="+googleToken;
+        String requestUrl = "https://oauth2.googleapis.com/tokeninfo?id_token=" + googleToken;
 
         ResponseEntity<String> rest_response = restTemplate.getForEntity(requestUrl, String.class);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(rest_response.getBody());
 
-        return UserInfo
+        UserInfo userInfo = UserInfo
                 .builder()
                 .name(root.path("name").asText())
                 .email(root.path("email").asText())
@@ -94,5 +101,24 @@ public class SocialLoginController {
                 .code(authCode)
                 .subscription(0)
                 .build();
+
+        String email = root.path("email").asText();
+        String existingUser = userTableRepository.get(email, "user", "name");
+        if (existingUser != null) {
+            return "User: "+ existingUser + " existed and successfully logged in" ;
+        }
+        System.out.println(existingUser);
+
+        userTableRepository.save(email,"user", "name", root.path("name").asText());
+        userTableRepository.save(email,"user", "subscription", defaultSubscription);
+
+        existingUser = userTableRepository.get(email, "user", "name");
+        if (existingUser != null) {
+            return "User: " + existingUser + " added and successfully logged in\"";
+        }
+
+        return "login failed";
     }
+
+
 }
