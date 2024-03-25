@@ -6,6 +6,7 @@ import com.example.comp539_team2_backend.entities.UserInfo;
 import com.example.comp539_team2_backend.configs.BigtableRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,7 +61,6 @@ public class SocialLoginController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create(reqUrl));
-
         //1.login page appears and redirects to / after login success
         return new ResponseEntity<>(headers, HttpStatus.MOVED_PERMANENTLY);
     }
@@ -89,6 +89,7 @@ public class SocialLoginController {
         GoogleLoginResponse googleLoginResponse = apiResponse.getBody();
 
         String googleToken = googleLoginResponse.getId_token();
+        System.out.println("googleToken = " + googleToken);
 
         // 5. use google token to retrieve user info
         String requestUrl = "https://oauth2.googleapis.com/tokeninfo?id_token=" + googleToken;
@@ -109,7 +110,7 @@ public class SocialLoginController {
         String email = root.path("email").asText();
         String existingUser = userTableRepository.get(email, "user", "name");
         if (existingUser != null) {
-            return "User: "+ existingUser + " existed and successfully logged in" ;
+            return "User: "+ existingUser + " existed and successfully logged in";
         }
         System.out.println(existingUser);
 
