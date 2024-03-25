@@ -66,8 +66,8 @@ public class SocialLoginController {
     }
 
     // 구글에서 리다이렉션
-    @GetMapping(value = "/")
-//    @GetMapping(value = "login/oauth2/code/google")
+//    @GetMapping(value = "/")
+    @GetMapping(value = "login/oauth2/code/google")
     public String oauth_google_check(HttpServletRequest request,
                                      @RequestParam(value = "code") String authCode,
                                      HttpServletResponse response) throws Exception {
