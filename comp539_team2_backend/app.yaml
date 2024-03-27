@@ -1,7 +1,7 @@
 runtime: java17
 env: standard
-env_variables:
-  GOOGLE_APPLICATION_CREDENTIALS: "./rice-comp-539-spring-2022-006cde831940.json"
+#env_variables:
+#  GOOGLE_APPLICATION_CREDENTIALS: "./rice-comp-539-spring-2022-006cde831940.json"
 instance_class: F1
 service_account: team2-268@rice-comp-539-spring-2022.iam.gserviceaccount.com
 service: comp539-team2-backend

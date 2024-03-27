@@ -9,14 +9,20 @@ import java.io.IOException;
 @Service
 public class UserInfoService {
     @Autowired
-    BigtableRepository userTableRepository;
+    BigtableRepository urlTableRepository;
 
 
     public String getSubscription(String email) throws IOException {
         String subscriptionStatus = "0";
         if (email != null) {
-            subscriptionStatus = userTableRepository.get(email, "user", "subscription");
+            subscriptionStatus = urlTableRepository.get(email, "user", "subscription");
         }
         return subscriptionStatus;
+    }
+
+    public void activateSubscriptionStatus(String email) throws IOException {
+        if (email != null) {
+            urlTableRepository.save(email, "user", "subscription", "1");
+        }
     }
 }

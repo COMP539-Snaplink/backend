@@ -2,26 +2,49 @@ package com.example.comp539_team2_backend;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.List;
 
 // DTO class to represent the request payload
 public class UrlRequestDTO {
     @JsonProperty("long_url")
-    private String long_url;
+    private String longUrl;
+
+    @JsonProperty("short_url")
+    private String shortUrl;
+
+    @JsonProperty("email")
+    private String email;
 
     @JsonProperty("long_urls")
-    private String[] long_urls;
+    private String[] longUrls;
+
+    @JsonProperty("short_urls")
+    private String[] shortUrls;
+
 
     // Standard getters and setters
     public String getLongUrl() {
-        return long_url;
+        return longUrl;
     }
+
+    public String getShortUrl() {
+        return shortUrl;
+    }
+
+    public String getEmail() { return email; }
 
     public String[] getLongUrls() {
-        return long_urls;
+        return longUrls;
     }
 
-    public void setLongUrl(String long_url) {
-        this.long_url = long_url;
+    public String[] getShortUrls() {
+        return shortUrls;
+    }
+
+    public void setLongUrl(String longUrl) {
+        this.longUrl = longUrl;
+    }
+
+    public void setLongUrls(String[] longUrls) {  // Added setter for longUrls
+        this.longUrls = longUrls;
     }
 }

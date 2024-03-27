@@ -18,9 +18,9 @@ public class BigtableConfig {
         return new BigtableRepository(projectId, instanceId, "spring24-team2-snaplink");
     }
 
-    @Bean
-    public BigtableRepository userTableRepository() {
-        return new BigtableRepository(projectId, instanceId, "spring24-team2-snaplink-userTable");
-    }
+//    @Bean
+//    public BigtableRepository userTableRepository() {
+//        return new BigtableRepository(projectId, instanceId, "spring24-team2-snaplink-userTable");
+//    }
 
 }

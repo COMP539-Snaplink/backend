@@ -1,22 +1,25 @@
 package com.example.comp539_team2_backend.controllers;
 
-import com.example.comp539_team2_backend.entities.GoogleLoginResponse;
-import com.example.comp539_team2_backend.entities.GoogleOAuthRequest;
-import com.example.comp539_team2_backend.entities.UserInfo;
-import com.example.comp539_team2_backend.configs.BigtableRepository;
+import com.example.comp539_team2_backend.entities.*;
+import com.example.comp539_team2_backend.configs.*;
+import com.example.comp539_team2_backend.services.UserInfoService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 
@@ -48,6 +51,9 @@ public class SocialLoginController {
     private static final String tableId =  "spring24-team2-snaplink"; // my-bigtable-table-id
     private static final String defaultSubscription = "0";
     private static final BigtableRepository userTableRepository = new BigtableRepository(projectId, instanceId, tableId);
+
+    @Autowired
+    private UserInfoService userInfoService;
 
     @GetMapping(value = "/login/getGoogleAuthUrl")
     public ResponseEntity<?> getGoogleAuthUrl(HttpServletRequest request) throws Exception {
@@ -89,7 +95,6 @@ public class SocialLoginController {
         GoogleLoginResponse googleLoginResponse = apiResponse.getBody();
 
         String googleToken = googleLoginResponse.getId_token();
-        System.out.println("googleToken = " + googleToken);
 
         // 5. use google token to retrieve user info
         String requestUrl = "https://oauth2.googleapis.com/tokeninfo?id_token=" + googleToken;
@@ -110,7 +115,7 @@ public class SocialLoginController {
         String email = root.path("email").asText();
         String existingUser = userTableRepository.get(email, "user", "name");
         if (existingUser != null) {
-            return "User: "+ existingUser + " existed and successfully logged in";
+            return "User: "+ existingUser + " existed and successfully logged in.\n Email: " + email + "\n Token: \n" + googleToken;
         }
         System.out.println(existingUser);
 
@@ -123,6 +128,18 @@ public class SocialLoginController {
         }
 
         return "login failed";
+    }
+
+    @PostMapping("/subscribe")
+    public String activateSubscription(@RequestBody UserInfo userInfo) throws IOException {
+        try {
+            String email = userInfo.getEmail();
+            userInfoService.activateSubscriptionStatus(email);
+            return "Activate subscription successfully.";
+        } catch (Exception e) {
+            String errorMessage = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            return errorMessage;
+        }
     }
 
 
