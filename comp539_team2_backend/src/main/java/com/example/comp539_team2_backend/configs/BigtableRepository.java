@@ -1,120 +1,131 @@
 package com.example.comp539_team2_backend.configs;
 
-import org.apache.hadoop.hbase.filter.CompareFilter;
-import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
-import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
+import com.google.api.gax.rpc.ServerStream;
+import com.google.cloud.bigtable.data.v2.BigtableDataClient;
+import com.google.cloud.bigtable.data.v2.models.*;
+import com.google.api.gax.rpc.NotFoundException;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-
-import com.google.cloud.bigtable.hbase.BigtableConfiguration;
-import com.google.cloud.bigtable.hbase.BigtableOptionsFactory;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.*;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.stereotype.Repository;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import com.google.cloud.bigtable.data.v2.models.Row;
+import com.google.cloud.bigtable.data.v2.models.Filters;
 
+import static com.google.cloud.bigtable.data.v2.models.Filters.*;
+import com.google.protobuf.ByteString;
+
+
+@Repository
 public class BigtableRepository {
 
-    private final org.apache.hadoop.conf.Configuration config;
+//    private final org.apache.hadoop.conf.Configuration config;
     private final String tableId;
     private static final Logger LOGGER = Logger.getLogger(BigtableRepository.class.getName());
+    private final BigtableDataClient client;
 
-    public BigtableRepository(String projectId, String instanceId, String tableId) {
-        this.config = BigtableConfiguration.configure(projectId, instanceId);
+    @Autowired
+    public BigtableRepository(BigtableDataClient client, @Value("$bigtable.tableId") String tableId) {
+        this.client = client;
         this.tableId = tableId;
     }
 
+
+
     public void save(String rowKey, String columnFamily, String columnQualifier, String data) throws IOException {
-        try (Connection connection = ConnectionFactory.createConnection((org.apache.hadoop.conf.Configuration) config);
-             Table table = connection.getTable(TableName.valueOf(tableId))) {
-            Put put = new Put(Bytes.toBytes(rowKey));
-            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(columnQualifier), Bytes.toBytes(data));
-            table.put(put);
-            LOGGER.info("Data Saved successfully for rowKey: " + rowKey);
-        } catch (Exception e) {
-            LOGGER.severe("Failed to save data for rowKey " + rowKey + ": " + e.getMessage());
-            throw e;
-        }
-    }
-
-    public String get(String rowKey, String columnFamily, String columnQualifier) throws IOException {
         try {
-            Connection connection = ConnectionFactory.createConnection((org.apache.hadoop.conf.Configuration) config);
-            Table table = connection.getTable(TableName.valueOf(tableId));
-            Result result = table.get(new Get(Bytes.toBytes(rowKey)));
-            LOGGER.info("Retrieved data successfully for rowKey:" + rowKey);
-            return Bytes.toString(result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes(columnQualifier)));
-        } catch (IOException e) {
-            LOGGER.severe("Failed to establish connection to Bigtable: " + e.getMessage());
-            Throwable cause = e.getCause();
-            Objects.requireNonNullElse(cause, e).printStackTrace();
-            throw e;
+            RowMutation mutation = RowMutation.create(tableId, rowKey)
+                    .setCell(columnFamily, columnQualifier, data);
+            client.mutateRow(mutation);
+            LOGGER.info("Data saved successfully for rowKey: " + rowKey);
+        } catch (NotFoundException e) {
+            LOGGER.severe("Failed to save data for rowKey " + rowKey + ": " + e.getMessage());
         }
     }
 
+    public String get(String rowKey, String columnFamily, String columnQualifier) {
+        try {
+            // 使用chain()方法组合多个过滤条件
+            Filter filter = FILTERS.chain()
+                    .filter(FILTERS.family().exactMatch(columnFamily))
+                    .filter(FILTERS.qualifier().exactMatch(columnQualifier));
 
-    public void deleteColumn(String rowKey, String columnFamily, String columnQualifier) throws IOException {
-        try (Connection conn = ConnectionFactory.createConnection(config);
-             Table table = conn.getTable(TableName.valueOf(tableId))) {
-            Delete delete = new Delete(Bytes.toBytes(rowKey));
-            delete.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(columnQualifier));
-            table.delete(delete);
-            LOGGER.info("Column deleted successfully for rowKey: " + rowKey);
-        } catch (IOException e) {
-            Throwable cause = e.getCause();
-            Objects.requireNonNullElse(cause, e).printStackTrace();
-            LOGGER.severe("Failed to delete column for rowKey " + rowKey + ": " + e.getCause().getMessage());
-            throw e;
-        }
-    }
+            // 读取行数据
+            Row row = client.readRow(tableId, rowKey, filter);
 
-    public void deleteRow(String rowKey) throws IOException {
-        try (Connection connection = ConnectionFactory.createConnection(config);
-             Table table = connection.getTable(TableName.valueOf(tableId))) {
-            Delete delete = new Delete(Bytes.toBytes(rowKey));
-            table.delete(delete);
-            LOGGER.info("Row deleted successfully for rowKey: " + rowKey);
-        } catch (IOException e) {
-            LOGGER.severe("Failed to delete row for rowKey " + rowKey + ": " + e.getMessage());
-            throw e;
-        }
-    }
-
-    public void updateExpiration(String email) throws IOException {
-        try (Connection connection = ConnectionFactory.createConnection(config);
-        Table table = connection.getTable(TableName.valueOf(tableId))) {
-            SingleColumnValueFilter filter = new SingleColumnValueFilter(
-                    Bytes.toBytes("url"),
-                    Bytes.toBytes("creator"),
-                    CompareFilter.CompareOp.EQUAL,
-                    Bytes.toBytes(email)
-            );
-
-            Scan scan = new Scan();
-            scan.setFilter(filter);
-
-            try (ResultScanner scanner = table.getScanner(scan)) {
-                for (Result result : scanner) {
-                    byte[] rowKey = result.getRow();
-                    Put put = new Put(rowKey);
-                    put.addColumn(Bytes.toBytes("url"), Bytes.toBytes("expiredAt"), Bytes.toBytes("NEVER"));
-                    table.put(put);
-                }
+            // 检查行数据是否不为空，并且特定列有值
+            if (row != null && !row.getCells(columnFamily, columnQualifier).isEmpty()) {
+                // 获取该列的值
+                String value = row.getCells(columnFamily, columnQualifier).get(0).getValue().toStringUtf8();
+                LOGGER.info("Retrieved data successfully for rowKey: " + rowKey);
+                return value;
+            } else {
+                LOGGER.info("No data found for rowKey: " + rowKey);
+                return null;
             }
-            LOGGER.info("Finish to update expiration for user: " + email);
-        } catch (IOException e) {
-            LOGGER.severe("Failed to update expiration for user: " + email + ": " + e.getMessage());
-            throw e;
+        } catch (NotFoundException e) {
+            LOGGER.severe("Row not found for rowKey " + rowKey + ": " + e.getMessage());
+            return null;
         }
     }
+
+
+
+
+
+//    public void deleteColumn(String rowKey, String columnFamily, String columnQualifier) throws IOException {
+//        try (Connection conn = ConnectionFactory.createConnection(config);
+//             Table table = conn.getTable(TableName.valueOf(tableId))) {
+//            Delete delete = new Delete(Bytes.toBytes(rowKey));
+//            delete.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(columnQualifier));
+//            table.delete(delete);
+//            LOGGER.info("Column deleted successfully for rowKey: " + rowKey);
+//        } catch (IOException e) {
+//            Throwable cause = e.getCause();
+//            Objects.requireNonNullElse(cause, e).printStackTrace();
+//            LOGGER.severe("Failed to delete column for rowKey " + rowKey + ": " + e.getCause().getMessage());
+//            throw e;
+//        }
+//    }
+
+    public void deleteRow(String rowKey) {
+        try {
+            RowMutation mutation = RowMutation.create(tableId, rowKey).deleteRow();
+            client.mutateRow(mutation);
+            LOGGER.info("Row deleted successfully for rowKey: " + rowKey);
+        } catch (NotFoundException e) {
+            LOGGER.severe("Failed to delete row for rowKey " + rowKey + ": " + e.getMessage());
+        }
+    }
+
+    public void updateExpiration(String email) {
+        // 创建一个过滤器，只检索 "creator" 列修饰符的行
+        Filters.Filter filter = Filters.FILTERS.qualifier().exactMatch("creator");
+
+        Query query = Query.create(tableId).filter(filter);
+
+        // 扫描所有匹配的行
+        ServerStream<Row> rows = client.readRows(query);
+
+        // 对每一行执行更新操作
+        for (Row row : rows) {
+            // 确认值是否匹配提供的电子邮件
+            String value = row.getCells("url", "creator").get(0).getValue().toStringUtf8();
+            if (email.equals(value)) {
+                String rowKey = row.getKey().toStringUtf8();
+                // 创建行变更来更新 "expiredAt" 列
+                RowMutation mutation = RowMutation.create(tableId, rowKey)
+                        .setCell("url", "expiredAt", ByteString.copyFromUtf8("NEVER").size());
+                // 提交变更
+                client.mutateRow(mutation);
+            }
+        }
+        LOGGER.info("Finished updating expiration for user: " + email);
+    }
+
+
+
 }
 
