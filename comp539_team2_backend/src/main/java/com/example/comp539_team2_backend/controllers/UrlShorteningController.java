@@ -29,9 +29,13 @@ public class UrlShorteningController {
 
     @PostMapping("/shorten")
     public ResponseEntity<String> shortenUrl(@RequestBody UrlRequestDTO request) {
+        long startTime = System.currentTimeMillis();
         try {
             String key = request.getEmail() == null ? "NO_USER" : request.getEmail();
             String shortened_url = urlShorteningService.shorten_url(request.getLongUrl(), key);
+            long endTime = System.currentTimeMillis();
+            long latency = endTime - startTime;
+            System.out.println("API latency for /api/shorten = " + latency + "ms");
             return ResponseEntity.ok(shortened_url);
         } catch (Exception e) {
             String errorMessage = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
@@ -52,17 +56,6 @@ public class UrlShorteningController {
             return ResponseEntity.internalServerError().body("Failed to resolve url: " + e.getCause().getMessage());
         }
     }
-
-//    @GetMapping("/bulk_resolve")
-//    public ResponseEntity<List<String>> bulkResolveUrls(@RequestBody UrlRequestDTO request) throws IOException {
-//        try {
-//            String key = request.getEmail() == null ? "NO_USER" : request.getEmail();
-//            List<String> originalUrls = urlShorteningService.bulk_resolve_urls(request.getShortUrls(), key);
-//            return ResponseEntity.ok(originalUrls);
-//        } catch (Exception e) {
-//            return ResponseEntity.internalServerError().body(Collections.singletonList("Failed to resolve urls: " + e.getMessage()));
-//        }
-//    }
 
     @PostMapping("/bulk_shorten")
     public ResponseEntity<List<String>> bulk_shorten_url(@RequestBody UrlRequestDTO request) {
@@ -122,6 +115,9 @@ public class UrlShorteningController {
         }
     }
 
-
-
+    @GetMapping("/_ah/warmup")
+    public String warmup() {
+        System.out.println("Warmup request received.");
+        return "Warmup done";
+    }
 }

@@ -18,7 +18,7 @@ public class UrlShorteningService {
     @Autowired
     private BigtableRepository urlTableRepository;
 
-    String prefix = "https://snaplk.com/";
+    String prefix = "https://snaplink.surge.sh/";
     private static final Logger logger = LoggerFactory.getLogger(UrlShorteningService.class);
 
     //Base62 characters set to encode ID
@@ -54,62 +54,72 @@ public class UrlShorteningService {
         byte[] sha256hash = DigestUtils.sha256(originalUrl);
 
         // 6 bytes from the hash would be enough for uniqueness.
-        byte[] hashPrefix = Arrays.copyOfRange(sha256hash, 0, 6);
+        byte[] hashPrefix = Arrays.copyOfRange(sha256hash, 0, 8);
 
         // Base62 encode the 6 byte hash prefix.
         String encoded = encodeBase62(hashPrefix);
 
         // Ensure the encoded string length is exactly 8 by padding with '0' or truncating if necessary.
-        if (encoded.length() < 8) {
-            // Pad with '0' from the left.
-            encoded = String.format("%8s", encoded).replace(' ', '0');
-        } else if (encoded.length() > 8) {
-            // Truncate to 8 characters.
-            encoded = encoded.substring(0, 8);
-        }
+        return encoded.length() > 8 ? encoded.substring(0, 8) : encoded;
+    }
 
-        return encoded;
+    // Check if the user is a premium user
+    private boolean isPremiumUser(String email) {
+        String subStatus = urlTableRepository.get(email, "user", "subscription");
+        return subStatus != null && subStatus.equals("1");
+    }
+
+    public String buildShortUrl(String rowKey) {
+        return prefix + rowKey;
     }
 
     //Basic functions for general users
-    public String shorten_url(String long_url, String email) throws Exception {
-        //Generate a row key from the original URL
-        String rowKey = generateRowKey(long_url);
-        boolean isPremium = false;
-        String subStatus = urlTableRepository.get(email, "user", "subscription");
+    // Main function to shorten URLs
+    public String shorten_url(String longUrl, String email) throws Exception {
+        // Generate a base row key from the original URL
+        String baseRowKey = generateRowKey(longUrl);
 
-        if (subStatus != null && subStatus.equals("1")) {
-            isPremium = true;
+        // Check if the user is a premium user
+        boolean isPremium = isPremiumUser(email);
+
+        // Handle hash collision and check if the long URL exists in the database
+        int attempt = 0, maxAttempts = 100;
+        String rowKey = baseRowKey;
+        while (attempt < maxAttempts) { // Assuming 100 as maxAttempts
+            String existingUrl = urlTableRepository.get(rowKey, "url", "originalUrl");
+            if (existingUrl == null) {
+                // If there's no conflict, can use the current rowKey
+                break;
+            } else if (existingUrl.equals(longUrl)) {
+                // Found the same long URL, return the corresponding short URL
+                return buildShortUrl(rowKey);
+            } else {
+                // Hash collision occurred, try the next rowKey
+                attempt++;
+                rowKey = baseRowKey + "_" + attempt;
+            }
         }
 
-        //Check existing shorten URL
-        String existingUrl = urlTableRepository.get(rowKey, "url", "originalUrl");
-        if (existingUrl != null) {
-            return buildShortUrl(rowKey);
+        // If the maximum number of attempts is reached and the conflict is still not resolved, throw an exception
+        if (attempt == maxAttempts) {
+            throw new RuntimeException("Unable to resolve hash collision after " + maxAttempts + " attempts.");
         }
 
-        // Save the new shortened URL information in Bigtable
-        urlTableRepository.save(rowKey, "url", "originalUrl", long_url);
+        // Save the new shortened URL information in the database
+        urlTableRepository.save(rowKey, "url", "originalUrl", longUrl);
         urlTableRepository.save(rowKey, "url", "shortenedUrl", buildShortUrl(rowKey));
 
-        // Save the creator info for logging user
-        if (subStatus == null) {
-            urlTableRepository.save(rowKey, "url", "creator", "NO_USER");
-        } else {
-            urlTableRepository.save(rowKey, "url", "creator", email);
-        }
-
+        // Save the creator's information
+        urlTableRepository.save(rowKey, "url", "creator", isPremium ? email : "NO_USER");
         urlTableRepository.save(rowKey, "url", "createdAt", getDate(CURRENT_DATE));
 
-        // Set expired time
-        if (isPremium) {
-            urlTableRepository.save(rowKey, "url", "expiredAt", "NEVER");
-        } else {
-            urlTableRepository.save(rowKey, "url", "expiredAt", getDate(ONE_YEAR));
-        }
+        // Set the expiration time for the shortened URL
+        urlTableRepository.save(rowKey, "url", "expiredAt", isPremium ? "NEVER" : getDate(ONE_YEAR));
 
+        // Return the shortened URL
         return buildShortUrl(rowKey);
     }
+
 
     public String resolve_url(String shortened_url) throws Exception {
         // Extract the row key from the shortened URL
@@ -119,21 +129,11 @@ public class UrlShorteningService {
         return urlTableRepository.get(rowKey, "url", "originalUrl");
     }
 
-    public String buildShortUrl(String rowKey) {
-        return prefix + rowKey;
-    }
-
     //Advanced functions for premium users
     public String customized_url(String long_url, String customized_url, String email) throws Exception {
 
         String subStatus = urlTableRepository.get(email, "user", "subscription");
-        boolean isPremium = false;
-
-        if (subStatus == null || subStatus.equals("0")) {
-            isPremium = false;
-        } else {
-            isPremium = true;
-        }
+        boolean isPremium = isPremiumUser(email);
 
 
         if (isPremium && customized_url != null) {
