@@ -1,26 +1,26 @@
 package com.example.comp539_team2_backend.configs;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.logging.Logger;
+
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Delete;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
-import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
+import org.apache.hadoop.hbase.util.Bytes;
 
 import com.google.cloud.bigtable.hbase.BigtableConfiguration;
-import com.google.cloud.bigtable.hbase.BigtableOptionsFactory;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.*;
-import org.apache.hadoop.hbase.util.Bytes;
-import org.springframework.stereotype.Repository;
-import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.util.logging.Logger;
 
 public class BigtableRepository {
 
@@ -116,5 +116,50 @@ public class BigtableRepository {
             throw e;
         }
     }
+
+
+     public boolean save_a(String rowKey, String columnFamily, String columnQualifier, String data) throws IOException {
+        try (Connection connection = ConnectionFactory.createConnection((org.apache.hadoop.conf.Configuration) config);
+             Table table = connection.getTable(TableName.valueOf(tableId))) {
+            Put put = new Put(Bytes.toBytes(rowKey));
+            put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(columnQualifier), Bytes.toBytes(data));
+            table.put(put);
+            LOGGER.info("Data Saved successfully for rowKey: " + rowKey);
+            return true;
+        } catch (Exception e) {
+            LOGGER.severe("Failed to save data for rowKey " + rowKey + ": " + e.getMessage());
+            throw e;
+            
+        }
+    }
+
+    public  List<String> getHistory(String email) throws IOException {
+        List<String> short_urls = new ArrayList<>();
+        try (Connection connection = ConnectionFactory.createConnection(config);
+        Table table = connection.getTable(TableName.valueOf(tableId))) {
+            SingleColumnValueFilter filter = new SingleColumnValueFilter(
+                    Bytes.toBytes("url"),
+                    Bytes.toBytes("creator"),
+                    CompareFilter.CompareOp.EQUAL,
+                    Bytes.toBytes(email)
+            );
+
+            Scan scan = new Scan();
+            scan.setFilter(filter);
+
+            try (ResultScanner scanner = table.getScanner(scan)) {
+                for (Result result : scanner) {
+                    byte[] rowKey = result.getRow();
+                    short_urls.add("https://snaplk.com/"+Bytes.toString(rowKey));
+                }
+            }
+            LOGGER.info("Finish to update expiration for user: " + email);
+            return short_urls;
+        } catch (IOException e) {
+            LOGGER.severe("Failed to update expiration for user: " + email + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
 }
 

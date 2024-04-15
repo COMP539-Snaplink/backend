@@ -4,7 +4,6 @@ com\example\comp539_team2_backend\configs\BigtableConfig.class
 com\example\comp539_team2_backend\entities\UserInfo.class
 com\example\comp539_team2_backend\configs\OAuthConfig.class
 com\example\comp539_team2_backend\entities\GoogleLoginResponse.class
-com\example\comp539_team2_backend\controllers\UrlShorteningController.class
 com\example\comp539_team2_backend\UrlRequestDTO.class
 com\example\comp539_team2_backend\Comp539Team2BackendApplication.class
 com\example\comp539_team2_backend\entities\UserInfo$UserInfoBuilder.class

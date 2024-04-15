@@ -28,7 +28,18 @@ public class UrlShorteningService {
     public static final int ONE_YEAR = 365;
     public static final int FOREVER = 999;
 
+    boolean is_premium (String email)throws IOException
+    {
+        String subStatus = urlTableRepository.get(email, "user", "subscription");
+        boolean isPremium = false;
 
+        if (subStatus == null || subStatus.equals("0")) {
+            isPremium = false;
+        } else {
+            isPremium = true;
+        }
+        return isPremium;
+    }
 
     private String encodeBase62(byte[] input) {
         if (input == null) {
@@ -107,7 +118,7 @@ public class UrlShorteningService {
         } else {
             urlTableRepository.save(rowKey, "url", "expiredAt", getDate(ONE_YEAR));
         }
-
+        urlTableRepository.save(rowKey, "url", "spam","0");
         return buildShortUrl(rowKey);
     }
 
@@ -158,16 +169,8 @@ public class UrlShorteningService {
 
     public List<String> bulk_shorten_urls(String[] long_urls, String email) throws Exception {
         List<String> shortened_urls = new ArrayList<>();
-        String subStatus = urlTableRepository.get(email, "user", "subscription");
-        boolean isPremium = false;
-
-        if (subStatus == null || subStatus.equals("0")) {
-            isPremium = false;
-        } else {
-            isPremium = true;
-        }
-
-        if (isPremium) {
+        boolean premium= is_premium(email);
+        if (premium) {
             for (String long_url : long_urls) {
                 logger.info("Email: " + email);
                 shortened_urls.add(shorten_url(long_url, email));
@@ -181,15 +184,8 @@ public class UrlShorteningService {
 
     public List<String> bulk_resolve_urls(String[] shortened_urls, String email) throws Exception {
         List<String> original_urls = new ArrayList<>();
-        String subStatus = urlTableRepository.get(email, "user", "subscription");
-        boolean isPremium = false;
-
-        if (subStatus == null || subStatus.equals("0")) {
-            isPremium = false;
-        } else {
-            isPremium = true;
-        }
-        if (isPremium) {
+        boolean premium= is_premium(email);
+        if (premium) {
             for (String shortened_url : shortened_urls) {
                 original_urls.add(resolve_url(shortened_url));
             }
@@ -198,29 +194,19 @@ public class UrlShorteningService {
     }
 
     public boolean renew_url_expiration(String email) throws IOException {
-        boolean isPremium = false;
-        String subStatus = urlTableRepository.get(email, "user", "subscription");
-
-        if (subStatus == null || subStatus.equals("0")) {
-            isPremium = false;
-        } else {
-            isPremium = true;
-        }
-
-        if (isPremium) {
+        
+        boolean premium= is_premium(email);
+        if (premium) {
             urlTableRepository.updateExpiration(email);
             return true;
         }
-
         return false;
     }
 
     public boolean delete_url(String short_url, String email) throws IOException {
         String rowKey = short_url.replace(prefix, "");
 
-        boolean isPremium = false;
         boolean isSameCreator = false;
-        String subStatus = urlTableRepository.get(email, "user", "subscription");
         String creator = urlTableRepository.get(rowKey, "url", "creator");
 
         if (creator == null || !creator.equals(email)) {
@@ -229,13 +215,9 @@ public class UrlShorteningService {
             isSameCreator = true;
         }
 
-        if (subStatus == null || subStatus.equals("0")) {
-            isPremium = false;
-        } else {
-            isPremium = true;
-        }
+        boolean premium = is_premium(email);
 
-        if (isPremium && isSameCreator) {
+        if (premium && isSameCreator) {
             urlTableRepository.deleteRow(rowKey);
             return true;
         }
@@ -262,5 +244,51 @@ public class UrlShorteningService {
         }
 
         return "NEVER";
+    }
+
+    public boolean mark_url_as_spam(String short_url,String email) throws IOException {
+        boolean is_marked = false;
+        String rowKey = short_url.replace(prefix, "");
+        boolean premium = is_premium(email);
+        if (premium) {
+           is_marked=urlTableRepository.save_a(rowKey, "url", "spam","1");
+        }
+        return is_marked;
+    }
+    public boolean remove_spam(String short_url,String email) throws IOException {
+        boolean is_unmarked = false;
+        String rowKey = short_url.replace(prefix, "");
+        boolean premium = is_premium(email);
+        if (premium) {
+            is_unmarked=urlTableRepository.save_a(rowKey, "url", "spam","0");
+        }
+        return is_unmarked;
+    }
+
+    public Map<String,String> get_info(String short_url,String email)throws IOException{
+        Map<String, String> information 
+            = new HashMap<String,String>();  
+        String rowKey = short_url.replace(prefix, "");
+        boolean premium = is_premium(email);
+        if (premium) {
+            String longUrl = urlTableRepository.get(rowKey, "url", "originalUrl");
+        information.put("long_url",longUrl);
+        String created_at=urlTableRepository.get(rowKey, "url", "createdAt");
+        information.put("created_at",created_at);
+        String expires_at=urlTableRepository.get(rowKey, "url", "expiredAt");
+        information.put("expires_at",expires_at);
+        String spam=urlTableRepository.get(rowKey, "url", "spam");
+        information.put("spam_status",spam);
+        }
+        return information;
+    }
+    public List<String> get_history(String email)throws IOException{
+        List<String> short_urls = new ArrayList<>();
+        boolean premium= is_premium(email);
+        if(premium)
+        {
+            short_urls=urlTableRepository.getHistory(email);
+        }
+        return short_urls;
     }
 }

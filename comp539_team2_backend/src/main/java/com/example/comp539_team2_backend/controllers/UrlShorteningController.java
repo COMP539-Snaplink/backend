@@ -1,19 +1,27 @@
 package com.example.comp539_team2_backend.controllers;
 
-import com.example.comp539_team2_backend.configs.BigtableRepository;
-import com.example.comp539_team2_backend.entities.UserInfo;
-import com.example.comp539_team2_backend.services.*;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-import com.example.comp539_team2_backend.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.logging.Logger;
+import com.example.comp539_team2_backend.UrlRequestDTO;
+import com.example.comp539_team2_backend.services.UrlShorteningService;
+import com.example.comp539_team2_backend.services.UserInfoService;
 
 @CrossOrigin("*")
 @RestController
@@ -122,6 +130,59 @@ public class UrlShorteningController {
         }
     }
 
-
+    @PostMapping("/markSpam")
+    public ResponseEntity<String> markUrlAsSpam(@RequestBody UrlRequestDTO request) throws IOException {
+        try {
+            String short_url = request.getShortUrl();
+            String email = request.getEmail();
+            String result = urlShorteningService.mark_url_as_spam(short_url,email) ? "Success to mark as spam." : "unable to mark as spam.";
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Failed to mark url as spam: " + e.getCause().getMessage());
+        }
+        
+    }
+    @PostMapping("/removeSpam")
+    public ResponseEntity<String> removeSpam(@RequestBody UrlRequestDTO request) throws IOException {
+        try {
+            String short_url = request.getShortUrl();
+            String email = request.getEmail();
+            String result = urlShorteningService.remove_spam(short_url,email) ? "Successfully removed spam" : "unable to remove spam.";
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Failed to delete url: " + e.getCause().getMessage());
+        }
+        
+    }
+    @PostMapping("/getInfo")
+    public ResponseEntity<Map<String, String>> getInfo(@RequestBody UrlRequestDTO request) throws IOException {
+        try {
+             Map<String, String> information 
+            = new HashMap<String,String>(); 
+            String short_url = request.getShortUrl();
+            String email = request.getEmail();
+            information = urlShorteningService.get_info(short_url,email);
+            return ResponseEntity.ok(information);
+        } 
+        catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to get information: " + e.getCause().getMessage());
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+        
+    }
+    @PostMapping("/getHistory")
+    public ResponseEntity<List<String>> getHistory(@RequestBody UrlRequestDTO request) throws IOException {
+        try {
+          
+            String key = request.getEmail() == null ? "NO_USER" : request.getEmail();
+            List<String> information = urlShorteningService.get_history(key);
+            return ResponseEntity.ok(information);
+        } 
+        catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Collections.singletonList("Failed to get History " + e.getMessage()));
+        }
+        
+    }
 
 }
