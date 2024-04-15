@@ -131,10 +131,7 @@ public class UrlShorteningService {
 
     //Advanced functions for premium users
     public String customized_url(String long_url, String customized_url, String email) throws Exception {
-
-        String subStatus = urlTableRepository.get(email, "user", "subscription");
         boolean isPremium = isPremiumUser(email);
-
 
         if (isPremium && customized_url != null) {
             String rowKey = customized_url.replace(prefix, "");
@@ -158,14 +155,7 @@ public class UrlShorteningService {
 
     public List<String> bulk_shorten_urls(String[] long_urls, String email) throws Exception {
         List<String> shortened_urls = new ArrayList<>();
-        String subStatus = urlTableRepository.get(email, "user", "subscription");
-        boolean isPremium = false;
-
-        if (subStatus == null || subStatus.equals("0")) {
-            isPremium = false;
-        } else {
-            isPremium = true;
-        }
+        boolean isPremium = isPremiumUser(email);
 
         if (isPremium) {
             for (String long_url : long_urls) {
@@ -173,39 +163,28 @@ public class UrlShorteningService {
                 shortened_urls.add(shorten_url(long_url, email));
             }
         } else {
-            return shortened_urls;
-
+            throw new Exception("No right to bulk shorten urls");
         }
         return shortened_urls;
     }
 
     public List<String> bulk_resolve_urls(String[] shortened_urls, String email) throws Exception {
         List<String> original_urls = new ArrayList<>();
-        String subStatus = urlTableRepository.get(email, "user", "subscription");
-        boolean isPremium = false;
+        boolean isPremium = isPremiumUser(email);
 
-        if (subStatus == null || subStatus.equals("0")) {
-            isPremium = false;
-        } else {
-            isPremium = true;
-        }
         if (isPremium) {
             for (String shortened_url : shortened_urls) {
                 original_urls.add(resolve_url(shortened_url));
             }
+        } else {
+            throw new Exception("No right to bulk resolve urls");
         }
+
         return original_urls;
     }
 
     public boolean renew_url_expiration(String email) throws IOException {
-        boolean isPremium = false;
-        String subStatus = urlTableRepository.get(email, "user", "subscription");
-
-        if (subStatus == null || subStatus.equals("0")) {
-            isPremium = false;
-        } else {
-            isPremium = true;
-        }
+        boolean isPremium = isPremiumUser(email);
 
         if (isPremium) {
             urlTableRepository.updateExpiration(email);
@@ -218,9 +197,8 @@ public class UrlShorteningService {
     public boolean delete_url(String short_url, String email) throws IOException {
         String rowKey = short_url.replace(prefix, "");
 
-        boolean isPremium = false;
+        boolean isPremium = isPremiumUser(email);
         boolean isSameCreator = false;
-        String subStatus = urlTableRepository.get(email, "user", "subscription");
         String creator = urlTableRepository.get(rowKey, "url", "creator");
 
         if (creator == null || !creator.equals(email)) {
@@ -229,17 +207,10 @@ public class UrlShorteningService {
             isSameCreator = true;
         }
 
-        if (subStatus == null || subStatus.equals("0")) {
-            isPremium = false;
-        } else {
-            isPremium = true;
-        }
-
         if (isPremium && isSameCreator) {
             urlTableRepository.deleteRow(rowKey);
             return true;
         }
-
         return false;
     }
 
