@@ -50,7 +50,9 @@ public class SocialLoginController {
     private static final String instanceId = "shared-539" ; // my-bigtable-instance-id
     private static final String tableId =  "spring24-team2-snaplink"; // my-bigtable-table-id
     private static final String defaultSubscription = "0";
-    private static final BigtableRepository userTableRepository = new BigtableRepository(projectId, instanceId, tableId);
+
+    @Autowired
+    private BigtableRepository userTableRepository;
 
     @Autowired
     private UserInfoService userInfoService;

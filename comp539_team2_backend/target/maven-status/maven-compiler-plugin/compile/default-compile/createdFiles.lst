@@ -1,3 +1,4 @@
+com\example\comp539_team2_backend\services\ExpiredDataServiceCleaner.class
 com\example\comp539_team2_backend\services\UrlShorteningService.class
 com\example\comp539_team2_backend\configs\BigtableRepository.class
 com\example\comp539_team2_backend\configs\BigtableConfig.class

@@ -9,3 +9,5 @@ handlers:
   - url: /.*
     script: this field is required, but ignored
     secure: always # Redirect HTTP to HTTPS
+inbound_services:
+  - warmup

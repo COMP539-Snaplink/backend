@@ -1,4 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: com.example.comp539_team2_backend.Comp539Team2BackendApplicationTests
 -------------------------------------------------------------------------------
+<<<<<<< HEAD
 Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.705 s -- in com.example.comp539_team2_backend.Comp539Team2BackendApplicationTests
+=======
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.430 s -- in com.example.comp539_team2_backend.Comp539Team2BackendApplicationTests
+>>>>>>> b019d298080761698b19202c27326560c1c800f1
