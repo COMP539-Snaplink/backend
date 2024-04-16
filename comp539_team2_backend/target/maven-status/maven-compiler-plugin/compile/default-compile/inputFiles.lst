@@ -1,16 +1,16 @@
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\entities\GoogleLoginResponse.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\services\SimpleBigtableService.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\controllers\UrlShorteningController.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\configs\BigtableConfig.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\JSONResult.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\Comp539Team2BackendApplication.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\services\UserInfoService.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\configs\OAuthConfig.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\services\UrlShorteningService.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\controllers\SocialLoginController.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\UrlRequestDTO.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\configs\BigtableRepository.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\entities\GoogleOAuthRequest.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\services\ExpiredDataServiceCleaner.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\entities\UserInfo.java
-C:\Users\user\OneDrive\Desktop\comp 539\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\controllers\SimpleBigtableServiceController.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\services\SimpleBigtableService.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\JSONResult.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\UrlRequestDTO.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\services\UrlShorteningService.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\configs\OAuthConfig.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\configs\BigtableConfig.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\configs\BigtableRepository.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\controllers\UrlShorteningController.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\services\ExpiredDataServiceCleaner.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\services\UserInfoService.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\controllers\SimpleBigtableServiceController.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\entities\UserInfo.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\entities\GoogleLoginResponse.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\entities\GoogleOAuthRequest.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\Comp539Team2BackendApplication.java
+C:\Users\LIC\Desktop\snaplink\backend\comp539_team2_backend\src\main\java\com\example\comp539_team2_backend\controllers\SocialLoginController.java

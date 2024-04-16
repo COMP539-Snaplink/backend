@@ -33,4 +33,8 @@ public class BigtableConfig {
     public BigtableRepository bigtableRepository(BigtableDataClient bigtableDataClient) {
         return new BigtableRepository(bigtableDataClient, tableId);
     }
+    // @Bean
+    // public BigtableRepository urlTableRepository() {
+    //     return new BigtableRepository(projectId, instanceId, "spring24-team2-snaplink");
+    // }
 }
