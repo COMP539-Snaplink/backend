@@ -101,6 +101,7 @@ public class SocialLoginController {
 
         // 5. use google token to retrieve user info
         String requestUrl = "https://oauth2.googleapis.com/tokeninfo?id_token=" + googleToken;
+        String frontendRedirectUri = "https://snaplink.surge.sh/?token=" + googleToken;
 
         ResponseEntity<String> rest_response = restTemplate.getForEntity(requestUrl, String.class);
         ObjectMapper mapper = new ObjectMapper();
@@ -118,7 +119,9 @@ public class SocialLoginController {
         String email = root.path("email").asText();
         String existingUser = userTableRepository.get(email, "user", "name");
         if (existingUser != null) {
-            return "User: "+ existingUser + " existed and successfully logged in.\n Email: " + email + "\n Token: \n" + googleToken;
+            response.sendRedirect(frontendRedirectUri);
+            return email;
+//            return "User: "+ existingUser + " existed and successfully logged in.\n Email: " + email + "\n Token: \n" + googleToken;
         }
         System.out.println(existingUser);
 
@@ -127,6 +130,7 @@ public class SocialLoginController {
 
         existingUser = userTableRepository.get(email, "user", "name");
         if (existingUser != null) {
+//            response.sendRedirect(frontendRedirectUri);
             return "User: " + existingUser + " added and successfully logged in\"";
         }
 
