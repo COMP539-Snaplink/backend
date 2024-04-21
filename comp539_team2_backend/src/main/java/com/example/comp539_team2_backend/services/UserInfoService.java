@@ -19,10 +19,26 @@ public class UserInfoService {
         }
         return subscriptionStatus;
     }
-
+    public String getTokens(String email) throws IOException {
+        String tokens = "0";
+        if (email != null) {
+            tokens = urlTableRepository.get(email, "user", "tokens");
+        }
+        return tokens;
+    }
+    public Boolean resetTokens(String email) throws IOException {
+        if (email != null) {
+            urlTableRepository.save(email, "user", "tokens", "10");
+            return true;
+        }
+       return false;
+    }
     public void activateSubscriptionStatus(String email) throws IOException {
         if (email != null) {
             urlTableRepository.save(email, "user", "subscription", "1");
+            urlTableRepository.save(email, "user", "tokens", "7");
         }
     }
+
+
 }

@@ -14,6 +14,7 @@ public class UserInfo {
     private String googleToken;
     private String code;
     private Integer subscription;
+    private Integer tokens;
 
     @JsonProperty("email")
     private String email;

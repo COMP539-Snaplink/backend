@@ -35,6 +35,7 @@ public class UrlShorteningController {
 
     @Autowired
     private UserInfoService userInfoService;
+    
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(UrlShorteningService.class);
     @PostMapping("/shorten")
@@ -224,5 +225,39 @@ public class UrlShorteningController {
         }
         
     }
+    @PostMapping("/getTokens")
+    public ResponseEntity<String> getTokens(@RequestBody UrlRequestDTO request) throws IOException {
+        try {
+            String Tokens;
+            String email = request.getEmail();
+            Tokens= userInfoService.getTokens(email);
+            return ResponseEntity.ok(Tokens);
+        } 
+        catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Failed to get Tokens: " + e.getCause().getMessage());
+        }
+        
+    }
+
+    @PostMapping("/resetTokens")
+    public ResponseEntity<String> resetTokens(@RequestBody UrlRequestDTO request) throws IOException {
+        try {
+            Boolean done;
+            String email = request.getEmail();
+            done= userInfoService.resetTokens(email);
+            if (done){
+                return ResponseEntity.ok("Reset Tokens successfully");
+            }
+            else{
+                return ResponseEntity.ok("Could not reset Tokens");
+            }
+            
+        } 
+        catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Failed to get Tokens: " + e.getCause().getMessage());
+        }
+        
+    }
+
 
 }

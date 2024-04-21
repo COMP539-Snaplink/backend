@@ -4,6 +4,8 @@ import com.example.comp539_team2_backend.configs.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.example.comp539_team2_backend.services.UserInfoService;
+
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -17,6 +19,9 @@ import org.slf4j.LoggerFactory;
 public class UrlShorteningService {
     @Autowired
     private BigtableRepository urlTableRepository;
+
+    @Autowired
+    private UserInfoService userInfoService;
 
     String prefix = "https://snaplink.surge.sh/";
     private static final Logger logger = LoggerFactory.getLogger(UrlShorteningService.class);
@@ -130,8 +135,9 @@ public class UrlShorteningService {
     //Advanced functions for premium users
     public String customized_url(String long_url, String customized_url, String email) throws Exception {
         boolean isPremium = isPremiumUser(email);
-
-        if (isPremium && customized_url != null) {
+        String Tokens = userInfoService.getTokens(email);
+        int Tokens_int=Integer.parseInt(Tokens);
+        if (isPremium && customized_url != null && Tokens_int>0) {
             String rowKey = customized_url.replace(prefix, "");
             String shortened_url = urlTableRepository.get(rowKey, "url", "originalUrl");
 
@@ -142,27 +148,30 @@ public class UrlShorteningService {
                 urlTableRepository.save(rowKey, "url", "expiredAt", getDate(FOREVER));
                 urlTableRepository.save(rowKey, "url", "creator", email);
                 urlTableRepository.save(rowKey, "url", "spam", "0");
+                deduct_token(email,Tokens);
                 return buildShortUrl(rowKey);
             } else {
                 throw new Exception("Customized URL is already in use. Please try a different URL.");
             }
         } else {
             // Handle the case where the key is "0" or the customized URL is null
-            throw new Exception("No right to use customized url functionality");
+            throw new Exception("No right to use customized url functionality or not enough tokens");
         }
     }
 
     public List<String> bulk_shorten_urls(String[] long_urls, String email) throws Exception {
         List<String> shortened_urls = new ArrayList<>();
         boolean isPremium = isPremiumUser(email);
-
-        if (isPremium) {
+        String Tokens = userInfoService.getTokens(email);
+        int Tokens_int=Integer.parseInt(Tokens);
+        if (isPremium && Tokens_int>0) {
             for (String long_url : long_urls) {
                 logger.info("Email: " + email);
                 shortened_urls.add(shorten_url(long_url, email));
+                deduct_token(email, Tokens);
             }
         } else {
-            throw new Exception("No right to bulk shorten urls");
+            throw new Exception("No right to bulk shorten urls or or not enough tokens");
         }
         return shortened_urls;
     }
@@ -170,13 +179,15 @@ public class UrlShorteningService {
     public List<String> bulk_resolve_urls(String[] shortened_urls, String email) throws Exception {
         List<String> original_urls = new ArrayList<>();
         boolean isPremium = isPremiumUser(email);
-
-        if (isPremium) {
+        String Tokens = userInfoService.getTokens(email);
+        int Tokens_int=Integer.parseInt(Tokens);
+        if (isPremium && Tokens_int>0) {
             for (String shortened_url : shortened_urls) {
                 original_urls.add(resolve_url(shortened_url));
+                deduct_token(email, Tokens);
             }
         } else {
-            throw new Exception("No right to bulk resolve urls");
+            throw new Exception("No right to bulk resolve urls or not enough tokens");
         }
 
         return original_urls;
@@ -205,9 +216,11 @@ public class UrlShorteningService {
         }
 
         boolean premium = isPremiumUser(email);
-
-        if (premium && isSameCreator) {
+        String Tokens = userInfoService.getTokens(email);
+        int Tokens_int=Integer.parseInt(Tokens);
+        if (premium && isSameCreator && Tokens_int>0) {
             urlTableRepository.deleteRow(rowKey);
+            deduct_token(email, Tokens);
             return true;
         }
         return false;
@@ -258,7 +271,9 @@ public class UrlShorteningService {
             = new HashMap<String,String>();  
         String rowKey = short_url.replace(prefix, "");
         boolean premium = isPremiumUser(email);
-        if (premium) {
+        String Tokens = userInfoService.getTokens(email);
+        int Tokens_int=Integer.parseInt(Tokens);
+        if (premium && Tokens_int>0) {
             String longUrl = urlTableRepository.get(rowKey, "url", "originalUrl");
         information.put("long_url",longUrl);
         String created_at=urlTableRepository.get(rowKey, "url", "createdAt");
@@ -266,6 +281,7 @@ public class UrlShorteningService {
         String expires_at=urlTableRepository.get(rowKey, "url", "expiredAt");
         information.put("expires_at",expires_at);
         String spam=urlTableRepository.get(rowKey, "url", "spam");
+        deduct_token(email, Tokens);
         information.put("spam_status",spam);
         }
         return information;
@@ -273,10 +289,18 @@ public class UrlShorteningService {
     public List<String> get_history(String email)throws IOException{
         List<String> short_urls = new ArrayList<>();
         boolean premium= isPremiumUser(email);
-        if(premium)
+        String Tokens = userInfoService.getTokens(email);
+        int Tokens_int=Integer.parseInt(Tokens);
+        if(premium && Tokens_int>0)
         {
+            deduct_token(email, Tokens);
             short_urls=urlTableRepository.getHistory(email);
         }
         return short_urls;
+    }
+    public void deduct_token(String email,String Tokens)throws IOException{
+        int Tokens_int=Integer.parseInt(Tokens);
+        Tokens_int--;
+        urlTableRepository.save(email, "user", "tokens", Integer.toString(Tokens_int) );
     }
 }
