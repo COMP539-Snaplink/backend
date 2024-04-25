@@ -1,5 +1,6 @@
 package com.example.comp539_team2_backend.controllers;
 
+import com.example.comp539_team2_backend.JSONResult;
 import com.example.comp539_team2_backend.entities.*;
 import com.example.comp539_team2_backend.configs.*;
 import com.example.comp539_team2_backend.services.UserInfoService;
@@ -148,6 +149,8 @@ public class SocialLoginController {
             return errorMessage;
         }
     }
+
+
 
 
 }

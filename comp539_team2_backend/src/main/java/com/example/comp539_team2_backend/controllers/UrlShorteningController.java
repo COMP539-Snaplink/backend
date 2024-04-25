@@ -64,6 +64,16 @@ public class UrlShorteningController {
         }
     }
 
+    @PostMapping("/getSubscription")
+    public ResponseEntity<JSONResult<Boolean>> getSubscription(@RequestBody UrlRequestDTO request) {
+        try {
+            String email = request.getEmail();
+            return ResponseEntity.ok(new JSONResult<>("success", urlShorteningService.isPremiumUser(email)));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new JSONResult<>("error", false));
+        }
+    }
+
     @GetMapping("/redirect/{short_url}")
     public RedirectView redirectUrl(@PathVariable("short_url") String shortUrl) {
         try {

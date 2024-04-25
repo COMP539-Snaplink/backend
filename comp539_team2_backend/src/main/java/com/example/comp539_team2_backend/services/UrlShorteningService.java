@@ -67,7 +67,7 @@ public class UrlShorteningService {
     }
 
     // Check if the user is a premium user
-    private boolean isPremiumUser(String email) {
+    public boolean isPremiumUser(String email) {
         String subStatus = urlTableRepository.get(email, "user", "subscription");
         return subStatus != null && subStatus.equals("1");
     }
