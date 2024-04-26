@@ -151,7 +151,7 @@ public class BigtableRepository {
                 String value = row.getCells("url", "creator").get(0).getValue().toStringUtf8();
                 if (email.equals(value)) {
                     String rowKey = row.getKey().toStringUtf8();
-                    short_urls.add("https://snaplk.com/"+rowKey);
+                    short_urls.add("https://snaplink.surge.sh/"+rowKey);
                 }
             }
             return short_urls;
