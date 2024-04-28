@@ -103,24 +103,18 @@ public class BigtableRepository {
     }
 
     public void updateExpiration(String email) {
-        // 创建一个过滤器，只检索 "creator" 列修饰符的行
         Filters.Filter filter = Filters.FILTERS.qualifier().exactMatch("creator");
 
         Query query = Query.create(tableId).filter(filter);
 
-        // 扫描所有匹配的行
         ServerStream<Row> rows = client.readRows(query);
 
-        // 对每一行执行更新操作
         for (Row row : rows) {
-            // 确认值是否匹配提供的电子邮件
             String value = row.getCells("url", "creator").get(0).getValue().toStringUtf8();
             if (email.equals(value)) {
                 String rowKey = row.getKey().toStringUtf8();
-                // 创建行变更来更新 "expiredAt" 列
                 RowMutation mutation = RowMutation.create(tableId, rowKey)
-                        .setCell("url", "expiredAt", ByteString.copyFromUtf8("NEVER").size());
-                // 提交变更
+                        .setCell("url", "expiredAt", "NEVER");
                 client.mutateRow(mutation);
             }
         }
