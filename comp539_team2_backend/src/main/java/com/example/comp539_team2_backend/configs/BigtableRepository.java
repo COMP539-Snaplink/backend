@@ -92,6 +92,24 @@ public class BigtableRepository {
 //        }
 //    }
 
+    public void clearAllData() {
+        try {
+            // Retrieve all rows from the table
+            Query allRowsQuery = Query.create(tableId);
+            ServerStream<Row> rows = client.readRows(allRowsQuery);
+            // Iterate through each row and delete it
+            for (Row row : rows) {
+                String rowKey = row.getKey().toStringUtf8();
+                RowMutation deleteMutation = RowMutation.create(tableId, rowKey).deleteRow();
+                client.mutateRow(deleteMutation);
+            }
+            LOGGER.info("All data cleared from table: " + tableId);
+        } catch (NotFoundException e) {
+            LOGGER.severe("Failed to clear data: " + e.getMessage());
+        }
+    }
+
+
     public void deleteRow(String rowKey) {
         try {
             RowMutation mutation = RowMutation.create(tableId, rowKey).deleteRow();

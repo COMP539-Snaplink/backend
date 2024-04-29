@@ -269,5 +269,14 @@ public class UrlShorteningController {
         
     }
 
+    @PostMapping("/cleanDB")
+    public ResponseEntity<String> cleanDB() {
+        try {
+            return ResponseEntity.ok(urlShorteningService.cleanData());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Failed to clean the database due to " + e.getCause().getMessage());
+        }
+    }
+
 
 }

@@ -149,8 +149,17 @@ public class SocialLoginController {
             return errorMessage;
         }
     }
-
-
+    @PostMapping("/unsubscribe")
+    public String cancelSubscription(@RequestBody UserInfo userInfo) throws IOException {
+        try {
+            String email = userInfo.getEmail();
+            userInfoService.cancelSubscription(email);
+            return "Cancel subscription successfully.";
+        } catch (Exception e) {
+            String errorMessage = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            return errorMessage;
+        }
+    }
 
 
 }

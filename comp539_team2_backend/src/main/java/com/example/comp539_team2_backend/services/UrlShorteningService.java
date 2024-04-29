@@ -247,6 +247,15 @@ public class UrlShorteningService {
         return "NEVER";
     }
 
+    public String cleanData() {
+        try {
+            urlTableRepository.clearAllData();
+            return "Database cleaned.";
+        } catch (Exception e) {
+            return e.getCause().getMessage();
+        }
+    }
+
     public boolean mark_url_as_spam(String short_url,String email) throws IOException {
         boolean is_marked = false;
         String rowKey = short_url.replace(prefix, "");

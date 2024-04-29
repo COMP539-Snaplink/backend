@@ -40,5 +40,12 @@ public class UserInfoService {
         }
     }
 
+    public void cancelSubscription(String email) throws IOException {
+        if (email != null) {
+            urlTableRepository.save(email, "user", "subscription", "0");
+            urlTableRepository.save(email, "user", "tokens", "0");
+        }
+    }
+
 
 }
